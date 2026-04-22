@@ -24,9 +24,27 @@ def create_or_open_index(index_dir):
         return whoosh.index.create_in(index_dir, schema)
 
 
+def index_documents(folder_path, index_dir):
+    idx = create_or_open_index(index_dir)
+
+    # Fetch the writer
+    writer = idx.writer()
+
+    for path in pathlib.Path(folder_path).rglob("*.pdf"):
+        with pdfplumber.open(path) as pdf:
+            for page in pdf.pages:
+                text = page.extract_text()
+                if text is not None:
+                    writer.add_document(
+                        path=str(path),
+                        filename=path.name,
+                        page=page.page_number,
+                        content=text
+                    )
+
+    writer.commit()     # Run at the end to persist the index
 
 
-
-idx = create_or_open_index(".index")
-print("Index ready:", idx)
+index_documents("../tests/", "../.index")
+print("Done!")
 
