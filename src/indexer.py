@@ -15,6 +15,10 @@ schema = Schema(path=ID(stored=True),           # Full file path, stored as-is
                 page=NUMERIC(stored=True),      # Page number for display
                 content=TEXT(stored=True))      # Full page text, this is what the query searches
 
+# List supported extensions
+SUPPORTED_EXTENSIONS = [".pdf"]
+
+
 # Create the .index folder if does not exist for saving indexes.
 def create_or_open_index(index_dir):
     """
@@ -28,28 +32,43 @@ def create_or_open_index(index_dir):
     return whoosh.index.create_in(index_dir, schema)
 
 
-def index_documents(folder_path, index_dir):
+def index_documents(path, index_dir, mode="recursive"):
     """
-    Walks the folder path recursively, extracts text from every PDF page,
-    then writes each page as a document into the Whoosh index
+    Retrieves files based on the selected mode, extracts text, 
+    and writes each page as document into the Whoosh index
     """
+
+    # Validate the mode, ensure the file is valid
+    if mode == "file" and not pathlib.Path(path).is_file():
+        raise ValueError(f"Mode is 'file' but the path is not a file!: {path}")
+
+    # Retrieve the index
     idx = create_or_open_index(index_dir)
 
     # Fetch the writer
     writer = idx.writer()
 
-    # List supported extensions
-    SUPPORTED_EXTENSIONS = [".pdf"]
+    # Create iterable list for searched files/folders
+    files = []
 
-    for path in pathlib.Path(folder_path).rglob("*"):
+    # Retrieve file(s)
+    if mode == "recursive":
+        files = pathlib.Path(path).rglob("*")
+    elif mode == "folder":
+        files = pathlib.Path(path).glob("*")
+    elif mode == "file":
+        files = [pathlib.Path(path)]    # Place the single item in a list, keeps the indexing logic clean
+
+    # Iterate through list, indexing each file
+    for _file in files:
         # Verify a valid extension has been selected
-        if path.suffix.lower() in SUPPORTED_EXTENSIONS:
-            for page_num, text in extract_text_from_file(path):
+        if _file.suffix.lower() in SUPPORTED_EXTENSIONS:
+            for page_num, text in extract_text_from_file(_file):
                 # Skip the pages that have no extractable text
                 if text is not None:
                     writer.add_document(
-                        path=str(path),
-                        filename=path.name,
+                        path=str(_file),
+                        filename=_file.name,
                         page=page_num,
                         content=text
                     )
@@ -62,11 +81,13 @@ def extract_text_from_file(path):
     Extract text from a file and return a list of (page_number, text) tuples
     """
 
+    # Add page tuples here, if extension is invalid, this remains empty
+    pages = []
+
     # Retrieve the extension
     ext = path.suffix.lower()
     if ext == ".pdf":
         # Handle PDF files here!
-        pages = []
         with pdfplumber.open(path) as pdf:
             for page in pdf.pages:
                 text = page.extract_text()
@@ -83,4 +104,3 @@ def extract_text_from_file(path):
 # TEMP - Test the functionality of index_documents() and create_or_open_index()
 # index_documents("../tests/", "../.index")
 # print("Done!")
-
