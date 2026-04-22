@@ -24,11 +24,8 @@ def create_or_open_index(index_dir):
     if not os.path.isdir(index_dir):
         os.makedirs(index_dir)
     
-    # Create a fresh index or open the existing one
-    if whoosh.index.exists_in(index_dir):
-        return whoosh.index.open_dir(index_dir)
-    else:
-        return whoosh.index.create_in(index_dir, schema)
+    # Always create  a fresh index, otherwise we get DUPLICATES!
+    return whoosh.index.create_in(index_dir, schema)
 
 
 def index_documents(folder_path, index_dir):
