@@ -1,19 +1,26 @@
-# Imports
+# indexer.py
+# Handles extracting text from filesand buidling Whoosh index
+# =======================================================================
+
 import os
 import pathlib
 import pdfplumber
 from whoosh.fields import Schema, ID, TEXT, NUMERIC
 import whoosh.index
 
-# Define a whoosh schema for the index
-schema = Schema(path=ID(stored=True),
-                filename=TEXT(stored=True),
-                page=NUMERIC(stored=True),
-                content=TEXT(stored=True))
+# Schema defines the structure of each indexed document
+# One document = one page of one file
+schema = Schema(path=ID(stored=True),           # Full file path, stored as-is
+                filename=TEXT(stored=True),     # Name of the specific file (For display)
+                page=NUMERIC(stored=True),      # Page number for display
+                content=TEXT(stored=True))      # Full page text, this is what the query searches
 
 # Create the .index folder if does not exist for saving indexes.
 def create_or_open_index(index_dir):
-    # If does not exist, create the index directory
+    """
+    Creates the index directory if it doesn't already exist.
+    Opens and returns the the existing index or creates a fresh one.
+    """
     if not os.path.isdir(index_dir):
         os.makedirs(index_dir)
     
@@ -25,6 +32,10 @@ def create_or_open_index(index_dir):
 
 
 def index_documents(folder_path, index_dir):
+    """
+    Walks the folder path recursively, extracts text from every PDF page,
+    then writes each page as a document into the Whoosh index
+    """
     idx = create_or_open_index(index_dir)
 
     # Fetch the writer
@@ -34,6 +45,7 @@ def index_documents(folder_path, index_dir):
         with pdfplumber.open(path) as pdf:
             for page in pdf.pages:
                 text = page.extract_text()
+                # Skip the pages that have no extractable text
                 if text is not None:
                     writer.add_document(
                         path=str(path),
@@ -45,6 +57,7 @@ def index_documents(folder_path, index_dir):
     writer.commit()     # Run at the end to persist the index
 
 
-index_documents("../tests/", "../.index")
-print("Done!")
+# TEMP - Test the functionality of index_documents() and create_or_open_index()
+# index_documents("../tests/", "../.index")
+# print("Done!")
 
