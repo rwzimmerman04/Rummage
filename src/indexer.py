@@ -41,21 +41,47 @@ def index_documents(folder_path, index_dir):
     # Fetch the writer
     writer = idx.writer()
 
-    for path in pathlib.Path(folder_path).rglob("*.pdf"):
-        with pdfplumber.open(path) as pdf:
-            for page in pdf.pages:
-                text = page.extract_text()
+    # List supported extensions
+    SUPPORTED_EXTENSIONS = [".pdf"]
+
+    for path in pathlib.Path(folder_path).rglob("*"):
+        # Verify a valid extension has been selected
+        if path.suffix.lower() in SUPPORTED_EXTENSIONS:
+            for page_num, text in extract_text_from_file(path):
                 # Skip the pages that have no extractable text
                 if text is not None:
                     writer.add_document(
                         path=str(path),
                         filename=path.name,
-                        page=page.page_number,
+                        page=page_num,
                         content=text
                     )
 
-    writer.commit()     # Run at the end to persist the index
+    writer.commit()     # Run at the end to persist data to index file
 
+
+def extract_text_from_file(path):
+    """
+    Extract text from a file and return a list of (page_number, text) tuples
+    """
+
+    # Retrieve the extension
+    ext = path.suffix.lower()
+    if ext == ".pdf":
+        # Handle PDF files here!
+        pages = []
+        with pdfplumber.open(path) as pdf:
+            for page in pdf.pages:
+                text = page.extract_text()
+                if text is not None:
+                    pages.append((page.page_number, text))
+    elif ext == ".txt":
+        # Handle TXT files here!
+        pass # To come later...
+    elif ext == ".docx":
+        # Handle DOCX files here!
+        pass # To come later...
+    return pages
 
 # TEMP - Test the functionality of index_documents() and create_or_open_index()
 # index_documents("../tests/", "../.index")
