@@ -34,7 +34,8 @@ I have a large collection of tabletop game rulebooks. When I need to look someth
 
 ## Usage
 
-...
+- `holy knight`     — finds pages containing both words
+- `"holy knight"`   — finds exact phrase only
 
 ---
 
@@ -57,9 +58,6 @@ Whoosh is a Python search library that handles all the hard work of building and
 - **Positional Indexing:** Records where each word appears within 
   a page, enabling phrase search like `"holy knight"` to find those 
   two words together, not just anywhere on the page.
-- **Stop Words:** Common words like "the", "a", "is" that get dropped 
-  from the index by default since nobody searches specifically for them, 
-  saving space and improving index build  performance.
 - **Case Insensitive:** "Holy", "holy", and "HOLY" all match up to the
   same entry.
 - **Delta Encoding:** Word positions are stored as compressed 
@@ -70,23 +68,19 @@ Whoosh is a Python search library that handles all the hard work of building and
 
 Well, as I said earlier in the motivation, Ctrl+F is completely fine, if you only have a few books or know which book to look in, and Ctrl+F is still useful once this tool has identified the books you query appears in. However, if you have a **large** collection of books, you may not feel like spending you precious time click open and closing each book, jumping from one occurrence to the next. This way, you can spend that time reading about the topic instead.
 
-### Why not a lightweight relational databse like SQLite?
-
-A database could work, but you would quickly run into some of it's limitations for an application like this. To support the **phrase search** you would need extra columns to store positional information for every word in every document - and since the same word appears a thousand times across hundred of pages or even files, that positional data would balloon into massive amounts of duplicate information.
-
-Phrase searches make it even worse. Finding "holy knight" requires a self join on a hypothetical *Positions* table - checking that "holy" and "knight" appear on the same page at consecutive palces. A three word search would require another join. Guess what, four words means another, and so on. So, we start to observe scaling issues.
-
-Finally, the table would be enormously bloated with words nobody would care about - "the", "a", "is", "in" - eating up space and slowing down every query. That happens to be another thing Whoosh handles for us, enter *stop words*.
-
 ### Wait! Won't we just have a bloated index with filler words?
 
-**NO!** Whoosh defaults to dropping common words - called **stop words** - from the index entirely. Words like "the", "a", "an", "is", "are", "on" and many more are never stored because they aren't typically searched for. This keeps a slim index and improves build time.
+**Yes — and this is intentional.** Whoosh is perfectly capable of dropping filler words like "the", "a", "is" from the index, in fact it does this be default, it keeps the index slim and improves build time. However, Rummage deliberately keeps them, why?
 
-An exmaple would be if I searched for `"the holy knight"`, this would automatically become a search for `"holy knight"` - notice the meaningful words are all that remains - the "the" has been ignored. This means we will recieve results where holy and knight appear in the sentence.
+The reason comes down to a real world use case. Tabletop rulebooks and many other documents have lots of game terms that contain filler words — "to hit", "at will", 
+"is prone", "a critical". If these filler words, or stop words as Whoosh calls them, were filtered, searching for `"to hit"` would silently become a search for just `"hit"`, returning 
+every page that mentions hit anywhere in any context at all rather than the specific mechanic you were looking for.
 
-**A heads up for rulebook users:** Some game terms may include stop words, like "to hit" or "at will". Whoosh will drop "to" and "at" by default, and only search for "hit" and "will". In many cases you will probably still find what you are looking for, but be warned that you may get some weird results from time to time on short phrase searches.
+Instead, Rummage keeps all words in the index and lets you control precision through searching the syntax:
 
-However! I plan to include a **Include stop words** option specifically for these edge cases - please refer to the roadmap down below for it's current status.
+- `holy knight` — finds pages where both words appear anywhere
+- `to hit`      — finds pages where "hit" appears
+- `"to hit"`    — finds the exact phrase, "to" and all
 
 ---
 
@@ -113,11 +107,7 @@ Rummage/
 - [X] PDF Support
 - [X] Phrase Search
 - [X] CLI interface and argument parser
-- [X] Stop words toggle (--stopwords)
 - [X] Result limit (--limit)
-- [X] Search mode selection: exact, all, any (--searchmode)
-- [ ] "Include stop words" toggle in GUI
-- [ ] Search mode selector in GUI
 - [ ] tkinter GUI
 - [ ] Windows executable with PyInstaller
 - [ ] DOCX Support

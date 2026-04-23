@@ -49,9 +49,7 @@ def main():
     parser.add_argument('-q', '--query',        help='Keyword or phrase to search for',             default=None)
     parser.add_argument('-m', '--mode',         help='Search mode: recursive, folder, or file',     default='recursive')
     parser.add_argument('-r', '--reindex',      help='Force a rebuild of the index',                default=False,              action='store_true')
-    parser.add_argument('-s', '--stopwords',    help='Enables stop words in the index',             default=False,              action='store_true')
     parser.add_argument('-l', '--limit',        help='Limits number of searches results returned',  default=30)
-    parser.add_argument('--searchmode',         help='Search mode: exact, all, or any',             default='all')
 
     # Retrieve the arguments
     args = parser.parse_args()
@@ -62,7 +60,7 @@ def main():
             print("Error: --dir is required to build the index.")
             return
         print("Indexing documents...")
-        index_documents(args.dir, INDEX_DIR, args.mode, args.stopwords)
+        index_documents(args.dir, INDEX_DIR, args.mode)
         print("Indexing Complete!")
 
     # Search if a query was provided
@@ -70,7 +68,7 @@ def main():
         if not whoosh.index.exists_in(INDEX_DIR):
             print("Error: No index found. Run with --reindex first.")
             return
-        matches = search_index(args.query, INDEX_DIR, args.limit, args.stopwords, args.searchmode)
+        matches = search_index(args.query, INDEX_DIR, args.limit)
         print_results(matches)
     else:
         print("No query provided! Use -q option to search.")
