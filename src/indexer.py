@@ -6,7 +6,7 @@ import os
 import pathlib
 import pdfplumber
 from whoosh.fields import Schema, ID, TEXT, NUMERIC
-from whoosh.analysis import RegexTokenizer, LowercaseFilter, StopFilter, StemFilter
+from whoosh.analysis import RegexTokenizer, LowercaseFilter, StopFilter
 import whoosh.index
 
 # Create two analyzers
@@ -29,10 +29,10 @@ def create_schema(use_stopwords=False):
     analyzer = analyzer_no_stop if use_stopwords else analyzer_with_stop
 
     return Schema(
-        path=ID(stored=True),           # Full file path, stored as-is
-        filename=TEXT(stored=True),     # Name of the specific file (For display)
-        page=NUMERIC(stored=True),      # Page number for display
-        content=TEXT(analyzer=analyzer, stored=True))      # Full page text, this is what the query searches
+        path=ID(stored=True),                               # Full file path, stored as-is
+        filename=TEXT(stored=True),                         # Name of the specific file (For display)
+        page=NUMERIC(stored=True),                          # Page number for display
+        content=TEXT(analyzer=analyzer, stored=True)        # Full page text, this is what the query searches
     )
 
 
