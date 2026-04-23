@@ -6,21 +6,37 @@ import os
 import pathlib
 import pdfplumber
 from whoosh.fields import Schema, ID, TEXT, NUMERIC
+from whoosh.analysis import RegexTokenizer, LowercaseFilter, StopFilter, StemFilter
 import whoosh.index
 
-# Schema defines the structure of each indexed document
-# One document = one page of one file
-schema = Schema(path=ID(stored=True),           # Full file path, stored as-is
-                filename=TEXT(stored=True),     # Name of the specific file (For display)
-                page=NUMERIC(stored=True),      # Page number for display
-                content=TEXT(stored=True))      # Full page text, this is what the query searches
+# Create two analyzers
+# Default:      Includes stop list (blocks stopwords)
+analyzer_with_stop = RegexTokenizer() | LowercaseFilter() | StopFilter()
+# Alternative:  No stop filter (keep stopwords)
+analyzer_no_stop = RegexTokenizer() | LowercaseFilter()
 
 # List supported extensions
 SUPPORTED_EXTENSIONS = [".pdf"]
 
 
-# Create the .index folder if does not exist for saving indexes.
-def create_or_open_index(index_dir):
+def create_schema(use_stopwords=False):
+    """
+    Builds and returns the Whoosh schema with the appropriate analyzer,
+    use_stopwords=False -> filters stop words (default)
+    use_stopwords=True  -> keeps stop words for edge cases like "to hit"
+    """
+
+    analyzer = analyzer_no_stop if use_stopwords else analyzer_with_stop
+
+    return Schema(
+        path=ID(stored=True),           # Full file path, stored as-is
+        filename=TEXT(stored=True),     # Name of the specific file (For display)
+        page=NUMERIC(stored=True),      # Page number for display
+        content=TEXT(analyzer=analyzer, stored=True))      # Full page text, this is what the query searches
+    )
+
+
+def create_or_open_index(index_dir, use_stopwords=False):
     """
     Creates the index directory if it doesn't already exist.
     Opens and returns the the existing index or creates a fresh one.
@@ -29,10 +45,10 @@ def create_or_open_index(index_dir):
         os.makedirs(index_dir)
     
     # Always create  a fresh index, otherwise we get DUPLICATES!
-    return whoosh.index.create_in(index_dir, schema)
+    return whoosh.index.create_in(index_dir, create_schema(use_stopwords))
 
 
-def index_documents(path, index_dir, mode="recursive"):
+def index_documents(path, index_dir, mode="recursive", use_stopwords=False):
     """
     Retrieves files based on the selected mode, extracts text, 
     and writes each page as document into the Whoosh index
@@ -43,7 +59,7 @@ def index_documents(path, index_dir, mode="recursive"):
         raise ValueError(f"Mode is 'file' but the path is not a file!: {path}")
 
     # Retrieve the index
-    idx = create_or_open_index(index_dir)
+    idx = create_or_open_index(index_dir, use_stopwords)
 
     # Fetch the writer
     writer = idx.writer()
