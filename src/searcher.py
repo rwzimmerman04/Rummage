@@ -6,7 +6,7 @@ import whoosh.index
 from whoosh.highlight import SentenceFragmenter
 from whoosh.qparser import QueryParser
 
-def search_index(query_string, index_dir):
+def search_index(query_string, index_dir, limit=30):
     idx = whoosh.index.open_dir(index_dir)
 
     # If index is empty, return an emty array
@@ -17,7 +17,7 @@ def search_index(query_string, index_dir):
     with idx.searcher() as searcher:
         # Build the query against the content field
         query = QueryParser("content", idx.schema).parse(query_string)
-        results = searcher.search(query)
+        results = searcher.search(query, limit)
 
         # Fragment the results, whoosh will now return whole sentences, rather than char misaligned slices/windows
         results.fragmenter = SentenceFragmenter()   
