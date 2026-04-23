@@ -12,7 +12,7 @@ Rummage lets you search through hundreds of documents at once without opening a 
 
 ## Motivation
 
-I have a large collection of tabletop game rulebooks. When I need to look something up, my only options were to guess which book it might be in, or open each one and use Ctrl+F. Rummage solves this by allowing me to search my entire collection from a single interface - no files need to be opened until I find exactly what I'm looking for. So, next time I want to play an unholy paladin sworn by blood to a storm god, I don't have to guess between 10+ books of templates and character rules.
+I have a large collection of tabletop game rulebooks. When I need to look something up, my only options were to guess which book it might be in, or open each one and use Ctrl+F. Rummage solves this by allowing me to search my entire collection from a single interface - no files need to be opened until I find exactly what I'm looking for. So, next time I want to play an unholy paladin sworn by blood to a storm god, I don't have to manually search through a dozen books of templates and character rules for the one entry that has exactly what I need at the time.
 
 ---
 
@@ -91,6 +91,7 @@ However! I plan to include a **Include stop words** option specifically for thes
 ---
 
 ## Project Structure 
+
 ```
 Rummage/
 ├── .index/                 # Emphemeral folder for index storage
@@ -104,6 +105,7 @@ Rummage/
 ├── requirements.txt        # Dependencies to import for build
 └── README.md               # The document you are reading, lol
 ```
+
 ---
 
 ## Development Roadmap
@@ -111,12 +113,18 @@ Rummage/
 - [X] PDF Support
 - [X] Phrase Search
 - [X] CLI interface and argument parser
+- [X] Stop words toggle (--stopwords)
+- [X] Result limit (--limit)
+- [X] Search mode selection: exact, all, any (--searchmode)
+- [ ] "Include stop words" toggle in GUI
+- [ ] Search mode selector in GUI
 - [ ] tkinter GUI
-- [ ] "Include stop words" toggle for edge cases
-- [ ] Windows executable with Python
+- [ ] Windows executable with PyInstaller
 - [ ] DOCX Support
 - [ ] TXT Support
-- [ ] Incremental Indexing (only re-index changed files)
+- [ ] Incremental indexing (only re-index changed files)
+- [ ] Stemming toggle (--stemming) for root word matching e.g. "knights" → "knight"
+*...something I should add?*
 
 ---
 
