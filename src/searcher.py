@@ -3,6 +3,7 @@
 # ===========================================================
 
 import whoosh.index
+from whoosh.highlight import SentenceFragmenter
 from whoosh.qparser import QueryParser
 
 def search_index(query_string, index_dir):
@@ -18,13 +19,16 @@ def search_index(query_string, index_dir):
         query = QueryParser("content", idx.schema).parse(query_string)
         results = searcher.search(query)
 
+        # Fragment the results, whoosh will now return whole sentences, rather than char misaligned slices/windows
+        results.fragmenter = SentenceFragmenter()   
+
         # Create an array of match dictionaries
         matches = []
         for r in results:
             matches.append({
                 "filename": r["filename"],
                 "page": r["page"],
-                "snippet": r.highlights("content") # Snippet with matched words wrapped in <b>, leave <b> in for the GUI :)
+                "snippet": r.highlights("content", top=1) # Snippet with matched words wrapped in <b>, leave <b> in for the GUI :)
             })
         return matches
 
