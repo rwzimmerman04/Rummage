@@ -1,7 +1,7 @@
 # Rummage
 Fast keyword and phrase search across large collections of documents. Built with Python, Whoosh, and tkinter.
 
-**Author:** Robert Zimmerman 
+**Author:** Robert Zimmerman  
 **Started:** April 2026
 
 ---
@@ -40,15 +40,15 @@ I have a large collection of tabletop game rulebooks. When I need to look someth
 
 ## How it works
 
-Rummage builds an **Inverted Index** -> A map of every word in every document to the exact file and page it appears on. Once built, searching is near-instant regardless of collection size because Rummage looks up words in the index rather than scanning every file for each query -- unlike a certain previous Java implementation that shall not be named. *looks side to side*
+Rummage builds an **Inverted Index** -> A map of every word in every document to the exact file and page it appears on. Once built, searching is near-instant regardless of collection size because Rummage looks up words in the index rather than scanning every file for each query - unlike a certain previous Java implementation that shall not be named. \**looks side to side*\*
 
-Phrase seaches like `"holy knight"` work using positional indexing where Whoosh records positions of every word, so it can verify that "holy" and "knight" are indeed next to one another, or at least in the same sentence (it does return the results by priority, FYI), not just anywhere on the page.
+Phrase seaches like `"holy knight"` work using positional indexing where Whoosh records positions of every word, so it can verify that "holy" and "knight" are indeed next to one another, or at least in the same sentence (it returns the results by priority, FYI), not just anywhere on the page.
 
 ---
 
 ## Why Whoosh?
 
-Whoosh is a Pythoin search library that handles all the hard work of building and querying an inverted index. Rather than scanning every doc on every query *cough cough*, Whoosh builds a map of every meaningful word to exact file and page it appears on- making searches near-instant. Now, what do I mean *meaningful*? More on that later.
+Whoosh is a Python search library that handles all the hard work of building and querying an inverted index. Rather than scanning every doc on every query, *cough cough*, Whoosh builds a map of every meaningful word to exact file and page it appears on- making searches near-instant. Now, what do I mean *meaningful*? More on that later.
 
 ### What does Whoosh handle exactly?
 
@@ -66,7 +66,7 @@ Whoosh is a Pythoin search library that handles all the hard work of building an
   differences rather than raw numbers, keeping the index much smaller
   than the original media.
 
-### Why not jsut Ctrl+F this?
+### Why not just Ctrl+F this?
 
 Well, as I said earlier in the motivation, Ctrl+F is completely fine, if you only have a few books or know which book to look in, and Ctrl+F is still useful once this tool has identified the books you query appears in. However, if you have a **large** collection of books, you may not feel like spending you precious time click open and closing each book, jumping from one occurrence to the next. This way, you can spend that time reading about the topic instead.
 
@@ -74,11 +74,11 @@ Well, as I said earlier in the motivation, Ctrl+F is completely fine, if you onl
 
 A database could work, but you would quickly run into some of it's limitations for an application like this. To support the **phrase search** you would need extra columns to store positional information for every word in every document - and since the same word appears a thousand times across hundred of pages or even files, that positional data would balloon into massive amounts of duplicate information.
 
-Phrase searches make it even worse. Finding "holy knight" requires a self join on a hypothetical *Positions* table - checking that "holy" and "knight" appear on the same page at consecutive palces. A three word search would require another join. Guess what, four words means another, and so on. So, we introdcue a scaling issue.
+Phrase searches make it even worse. Finding "holy knight" requires a self join on a hypothetical *Positions* table - checking that "holy" and "knight" appear on the same page at consecutive palces. A three word search would require another join. Guess what, four words means another, and so on. So, we start to observe scaling issues.
 
 Finally, the table would be enormously bloated with words nobody would care about - "the", "a", "is", "in" - eating up space and slowing down every query. That happens to be another thing Whoosh handles for us, enter *stop words*.
 
-### Wait! Won't be just have a bloated index with filler words?
+### Wait! Won't we just have a bloated index with filler words?
 
 **NO!** Whoosh defaults to dropping common words - called **stop words** - from the index entirely. Words like "the", "a", "an", "is", "are", "on" and many more are never stored because they aren't typically searched for. This keeps a slim index and improves build time.
 
@@ -91,7 +91,7 @@ However! I plan to include a **Include stop words** option specifically for thes
 ---
 
 ## Project Structure 
-
+```
 Rummage/
 ├── .index/                 # Emphemeral folder for index storage
 ├── src/
@@ -103,7 +103,7 @@ Rummage/
 │   └── Rummage_test.pdf    # Simple PDF file for sanity checks after logic adjustments
 ├── requirements.txt        # Dependencies to import for build
 └── README.md               # The document you are reading, lol
-
+```
 ---
 
 ## Development Roadmap
@@ -118,7 +118,7 @@ Rummage/
 - [ ] TXT Support
 - [ ] Incremental Indexing (only re-index changed files)
 
---
+---
 
 ## License
 
