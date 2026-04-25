@@ -15,6 +15,8 @@ INDEX_DIR   = "../.index"
 APP_VERSION = "0.1"
 
 
+
+
 class RummageApp:
     def __init__(self, window):
         # Create the window
