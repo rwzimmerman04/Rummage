@@ -114,7 +114,7 @@ Rummage/
 - [ ] TXT Support
 - [ ] Incremental indexing (only re-index changed files)
 - [ ] Stemming toggle (--stemming) for root word matching e.g. "knights" → "knight"
-*...something I should add?*
+- *...something I should add?*
 
 ---
 
