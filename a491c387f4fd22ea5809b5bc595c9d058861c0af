@@ -1,8 +1,9 @@
 {
   "aiidentifierVersion": "0.0.1",
   "commit": "a491c387f4fd22ea5809b5bc595c9d058861c0af",
-  "generatedAt": "2026-04-25T17:49:36.737Z",
-  "flagCount": 2,
+  "generatedAt": "2026-04-25T18:08:44.231Z",
+  "flagCount": 3,
+  "deletedCount": 0,
   "flaggedRegions": [
     {
       "file": "src/index.js",
@@ -10,7 +11,8 @@
       "endLine": 25,
       "charCount": 312,
       "reasonFlagged": "Large instant insertion — 312 chars in <100ms",
-      "timeStamp": "2026-04-25T17:45:01.818Z"
+      "timeStamp": "2026-04-25T18:08:19.393Z",
+      "deleted": false
     },
     {
       "file": "src/index.js",
@@ -18,7 +20,17 @@
       "endLine": 25,
       "charCount": 312,
       "reasonFlagged": "Large instant insertion — 312 chars in <100ms",
-      "timeStamp": "2026-04-25T17:45:09.028Z"
+      "timeStamp": "2026-04-25T18:08:22.724Z",
+      "deleted": false
+    },
+    {
+      "file": "src/index.js",
+      "startLine": 10,
+      "endLine": 25,
+      "charCount": 312,
+      "reasonFlagged": "Large instant insertion — 312 chars in <100ms",
+      "timeStamp": "2026-04-25T18:08:25.543Z",
+      "deleted": false
     }
   ]
 }
