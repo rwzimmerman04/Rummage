@@ -107,6 +107,8 @@ class RummageApp:
                  font=("Helvetica", 9), fg="gray")\
             .pack(anchor="w", padx=14)
 
+            
+
 
 
     # ===========================================================
