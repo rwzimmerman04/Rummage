@@ -38,7 +38,7 @@ def create_or_open_index(index_dir):
         os.makedirs(index_dir)
     
     # Always create  a fresh index, otherwise we get DUPLICATES!
-    return whoosh.index.create_in(index_dir, create_schema(use_stopwords))
+    return whoosh.index.create_in(index_dir, create_schema())
 
 
 def index_documents(path, index_dir, mode="recursive"):
@@ -52,7 +52,7 @@ def index_documents(path, index_dir, mode="recursive"):
         raise ValueError(f"Mode is 'file' but the path is not a file!: {path}")
 
     # Retrieve the index
-    idx = create_or_open_index(index_dir, use_stopwords)
+    idx = create_or_open_index(index_dir)
 
     # Fetch the writer
     writer = idx.writer()
