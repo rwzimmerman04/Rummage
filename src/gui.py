@@ -7,6 +7,7 @@ from tkinter import filedialog, messagebox
 import customtkinter as ctk
 import re
 import os
+import threading
 import webbrowser
 import whoosh.index
 import pathlib
@@ -71,7 +72,7 @@ class RummageApp:
         # About menu: app info and help
         about_menu = tk.Menu(menubar, tearoff=0)
         about_menu.add_command(label="About Rummage", command=self.show_about)
-        about_menu.add_command(label="View on GitHub", command=self.open_github_link)
+        about_menu.add_command(label="View on GitHub", command=lambda:self.open_link(GITHUB_URL))
         about_menu.add_separator()
         about_menu.add_command(label="Help", command=self.show_help)
         menubar.add_cascade(label="About", menu=about_menu)
@@ -217,6 +218,29 @@ class RummageApp:
         frame = ctk.CTkFrame(self.window)
         frame.pack(fill="both", expand=True, padx=12, pady=(0, 4))
 
+        # Build the results area
+        self.results_text = tk.Text(
+            frame,
+            state="disabled",
+            wrap="word",
+            font=("Helvetica", 10),
+            bg="#2b2b2b",
+            fg="#ffffff",
+            padx=10,
+            pady=8,
+            cursor="arrow",
+            relief="flat",
+            insertbackground="white"
+        )
+        self.results_text.pack(fill="both", expand=True)
+
+        # Define tags for stlying the results area
+        self.results_text.tag_config("filename",    font=("Helvetica", 10, "bold"), foreground="#4fc3f7")
+        self.results_text.tag_config("page",        foreground="#888888")
+        self.results_text.tag_config("snippet",     font=("Helvetica", 10), foreground="#dddddd")
+        self.results_text.tag_config("match",       font=("Helvetica", 10, "bold"), foreground="#ffc107")
+        self.results_text.tag_config("divider",     foreground="#444444")
+
 
     # ===========================================================
     # Status Bar
@@ -256,11 +280,22 @@ class RummageApp:
                     self.show_warning("No index found: Index will be built on first search.")
             self.status_text.set(f"Folder: {path}")
 
-    def open_github_link(self):
+
+
+    def _set_ui_enabled(self, enabled):
+        """
+        Enables or disables interactive widgets during the indexing.
+        """
+        state = "normal" if enabled else "disabled"
+        self.query_entry.configure(state=state)
+
+
+    def open_link(self, url_in):
         """
         Open the github page for Rummage, direct the user to the page
         """
-        webbrowser.open(GITHUB_URL)
+        webbrowser.open(url_in)
+
 
     def show_about(self):
         """
@@ -268,6 +303,7 @@ class RummageApp:
         """
         messagebox.showinfo("About Rummage", 
             f"Rummage v{APP_VERSION}\n\nFast keyword and phrase search across large document collections.\n\nBuilt by Robert Zimmerman")
+
 
     def show_help(self):
         """
