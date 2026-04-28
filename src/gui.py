@@ -185,6 +185,19 @@ class RummageApp:
         self.warning_label.pack(padx=12, pady=6)
 
     
+    def show_warning(self, warning):
+        """
+        Show the warning label and display a warning message
+        """
+        self.warning_label.configure(text=warning)
+        self.warning_frame.pack(fill="x", padx=12, pady=(2, 0))
+
+
+    def hide_warning(self):
+        """
+        Hide the warning label
+        """
+        self.warning_label.pack_forget()
 
     # ===========================================================
     # Results Panel
@@ -234,14 +247,14 @@ class RummageApp:
         if path:
             self.folder_path.set(path)
 
-        # Flag reindex if folder changed
-        if path != self.last_folder:
-            self.needs_reindex = True
-            # if whoosh.index.exists_in(INDEX_DIR):
-                # Display a warning about reindexing
-            # else:
-                # Display a warning about needing to build the index
-        self.status_text.set(f"Folder: {path}")
+            # Flag reindex if folder changed
+            if path != self.last_folder:
+                self.needs_reindex = True
+                if whoosh.index.exists_in(INDEX_DIR):
+                    self.show_warning("Folder changed: Index will be rebuilt on next search.")
+                else:
+                    self.show_warning("No index found: Index will be built on first search.")
+            self.status_text.set(f"Folder: {path}")
 
     def open_github_link(self):
         """
