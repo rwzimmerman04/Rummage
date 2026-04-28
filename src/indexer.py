@@ -41,6 +41,19 @@ def create_or_open_index(index_dir):
     return whoosh.index.create_in(index_dir, create_schema())
 
 
+def _extract_worker(path):
+    """
+    Worker function for parallel extraction.
+    Called by each process in the pool.
+    Returns a list of (path, filename, page_num, text) tuples.
+    """
+
+    results = []
+    for page_num, text in extract_text_from_file(path):
+        results.append((str(path), path.name, page_num, text))
+    return results
+
+
 def index_documents(path, index_dir, mode="recursive"):
     """
     Retrieves files based on the selected mode, extracts text, 
@@ -113,3 +126,8 @@ def extract_text_from_file(path):
 # TEMP - Test the functionality of index_documents() and create_or_open_index()
 # index_documents("../tests/", "../.index")
 # print("Done!")
+
+
+
+result = _extract_worker(pathlib.Path("../tests/Rummage_test.pdf"))
+print(result)
