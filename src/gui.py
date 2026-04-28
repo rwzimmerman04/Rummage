@@ -62,10 +62,10 @@ class RummageApp:
 
         # About menu: app info and help
         about_menu = tk.Menu(menubar, tearoff=0)
-        about_menu.add_command(label="About Rummage")
+        about_menu.add_command(label="About Rummage", command=self.show_about)
         about_menu.add_command(label="View on GitHub", command=self.open_github_link)
         about_menu.add_separator()
-        about_menu.add_command(label="Help")
+        about_menu.add_command(label="Help", command=self.show_help)
         menubar.add_cascade(label="About", menu=about_menu)
 
         # Attach the menu bar to the window
@@ -217,7 +217,31 @@ class RummageApp:
     # Helper functions
     # ===========================================================
     def open_github_link(self):
+        """
+        Open the github page for Rummage, direct the user to the page
+        """
         webbrowser.open(GITHUB_URL)
+
+    def show_about(self):
+        """
+        Defines a message box to display info about the Rummage app to the user
+        """
+        messagebox.showinfo("About Rummage", 
+            f"Rummage v{APP_VERSION}\n\nFast keyword and phrase search across large document collections.\n\nBuilt by Robert Zimmerman")
+
+    def show_help(self):
+        """
+        Defines a message box for tips and helpful info for the user.
+        """
+        messagebox.showinfo("Help",
+            "Search syntax:\n\n"
+            "  holy knight     — pages containing both words\n"
+            '  "holy knight"   — exact phrase only\n\n'
+            "Indexing:\n\n"
+            "  Select a folder and click Search.\n"
+            "  The index is built automatically on first search.\n"
+            "  Use File > Reindex to force a rebuild.")
+
 
 
 # ===========================================================
