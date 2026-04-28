@@ -4,9 +4,10 @@
 
 import os
 import pathlib
-import pdfplumber
+import fitz
 from whoosh.fields import Schema, ID, TEXT, NUMERIC
 from whoosh.analysis import RegexTokenizer, LowercaseFilter
+from multiprocessing import Pool, cpu_count, freeze_support
 import whoosh.index
 
 # Create analyzer: No stop filter (keep stopwords)
@@ -47,7 +48,6 @@ def _extract_worker(path):
     Called by each process in the pool.
     Returns a list of (path, filename, page_num, text) tuples.
     """
-
     results = []
     for page_num, text in extract_text_from_file(path):
         results.append((str(path), path.name, page_num, text))
@@ -59,6 +59,7 @@ def index_documents(path, index_dir, mode="recursive"):
     Retrieves files based on the selected mode, extracts text, 
     and writes each page as document into the Whoosh index
     """
+    freeze_support()
 
     # Validate the mode, ensure the file is valid
     if mode == "file" and not pathlib.Path(path).is_file():
@@ -70,32 +71,31 @@ def index_documents(path, index_dir, mode="recursive"):
     # Fetch the writer
     writer = idx.writer()
 
-    # Create iterable list for searched files/folders
-    files = []
-
-    # Retrieve file(s)
+    # Build file list
     if mode == "recursive":
-        files = pathlib.Path(path).rglob("*")
+        files = [f for f in pathlib.Path(path).rglob("*") 
+                 if f.suffix.lower() in SUPPORTED_EXTENSIONS]
     elif mode == "folder":
-        files = pathlib.Path(path).glob("*")
+        files = [f for f in pathlib.Path(path).glob("*") 
+                 if f.suffix.lower() in SUPPORTED_EXTENSIONS]
     elif mode == "file":
-        files = [pathlib.Path(path)]    # Place the single item in a list, keeps the indexing logic clean
+        files = [pathlib.Path(path)]
 
-    # Iterate through list, indexing each file
-    for _file in files:
-        # Verify a valid extension has been selected
-        if _file.suffix.lower() in SUPPORTED_EXTENSIONS:
-            for page_num, text in extract_text_from_file(_file):
-                # Skip the pages that have no extractable text
-                if text is not None:
-                    writer.add_document(
-                        path=str(_file),
-                        filename=_file.name,
-                        page=page_num,
-                        content=text
-                    )
+    # Extract text in parallel
+    with Pool(processes=cpu_count()) as pool:
+        results = pool.map(_extract_worker, files)
 
-    writer.commit()     # Run at the end to persist data to index file
+    # Write to index single-threaded
+    for file_results in results:
+        for _path, filename, page_num, text in file_results:
+            writer.add_document(
+                path=_path,
+                filename=filename,
+                page=page_num,
+                content=text
+            )
+
+    writer.commit()
 
 
 def extract_text_from_file(path):
@@ -109,12 +109,11 @@ def extract_text_from_file(path):
     # Retrieve the extension
     ext = path.suffix.lower()
     if ext == ".pdf":
-        # Handle PDF files here!
-        with pdfplumber.open(path) as pdf:
-            for page in pdf.pages:
-                text = page.extract_text()
-                if text is not None:
-                    pages.append((page.page_number, text))
+        with fitz.open(path) as pdf:
+            for page in pdf:
+                text = page.get_text()
+                if text.strip():
+                    pages.append((page.number + 1, text))
     elif ext == ".txt":
         # Handle TXT files here!
         pass # To come later...
@@ -126,8 +125,3 @@ def extract_text_from_file(path):
 # TEMP - Test the functionality of index_documents() and create_or_open_index()
 # index_documents("../tests/", "../.index")
 # print("Done!")
-
-
-
-result = _extract_worker(pathlib.Path("../tests/Rummage_test.pdf"))
-print(result)
