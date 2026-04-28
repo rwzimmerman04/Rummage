@@ -3,10 +3,16 @@
 # ===========================================================
 
 import tkinter as tk
-import webbrowser
-import pathlib
-import customtkinter as ctk
 from tkinter import filedialog, messagebox
+import customtkinter as ctk
+import re
+import os
+import webbrowser
+import whoosh.index
+import pathlib
+
+from indexer import index_documents
+from searcher import search_index
 
 # Set the appearance of the application
 ctk.set_appearance_mode("dark")
@@ -30,6 +36,8 @@ class RummageApp:
         # any widget that is bound to them when their value changes
         self.folder_path = tk.StringVar(value="No folder selected...")
         self.status_text = tk.StringVar(value="Ready.")
+        self.needs_reindex = False
+        self.last_folder = None
 
         # Build each section of the UI in order
         self._build_menu()
@@ -101,7 +109,7 @@ class RummageApp:
             .pack(side="left", fill="x", expand=True, padx=(0, 6))
 
         # Create the browse button
-        ctk.CTkButton(path_frame, text="Browse", width=80)\
+        ctk.CTkButton(path_frame, text="Browse", width=80, command=self.browse_folder)\
             .pack(side="left")
 
         # All three radio buttons share the same variable this way only one can be selected at a time
@@ -176,6 +184,7 @@ class RummageApp:
         )
         self.warning_label.pack(padx=12, pady=6)
 
+    
 
     # ===========================================================
     # Results Panel
@@ -216,6 +225,24 @@ class RummageApp:
     # ===========================================================
     # Helper functions
     # ===========================================================
+
+    def browse_folder(self):
+        """
+        Open folder picker and detect if reindex is needed.
+        """
+        path = filedialog.askdirectory()
+        if path:
+            self.folder_path.set(path)
+
+        # Flag reindex if folder changed
+        if path != self.last_folder:
+            self.needs_reindex = True
+            # if whoosh.index.exists_in(INDEX_DIR):
+                # Display a warning about reindexing
+            # else:
+                # Display a warning about needing to build the index
+        self.status_text.set(f"Folder: {path}")
+
     def open_github_link(self):
         """
         Open the github page for Rummage, direct the user to the page
@@ -241,6 +268,7 @@ class RummageApp:
             "  Select a folder and click Search.\n"
             "  The index is built automatically on first search.\n"
             "  Use File > Reindex to force a rebuild.")
+
 
 
 
