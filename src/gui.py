@@ -3,6 +3,8 @@
 # ===========================================================
 
 import tkinter as tk
+import webbrowser
+import pathlib
 import customtkinter as ctk
 from tkinter import filedialog, messagebox
 
@@ -11,6 +13,9 @@ ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("blue")
 
 # Constants
+GITHUB_URL  = "https://github.com/rwzimmerman04/Rummage"
+BASE_DIR    = pathlib.Path(__file__).parent.parent
+INDEX_DIR   = str(BASE_DIR / ".index")
 APP_VERSION = "0.1"
 
 
@@ -58,7 +63,7 @@ class RummageApp:
         # About menu: app info and help
         about_menu = tk.Menu(menubar, tearoff=0)
         about_menu.add_command(label="About Rummage")
-        about_menu.add_command(label="View on GitHub")
+        about_menu.add_command(label="View on GitHub", command=self.open_github_link)
         about_menu.add_separator()
         about_menu.add_command(label="Help")
         menubar.add_cascade(label="About", menu=about_menu)
@@ -207,6 +212,12 @@ class RummageApp:
                      font=ctk.CTkFont(size=10),
                      text_color="gray")\
             .pack(side="left", padx=8)
+
+    # ===========================================================
+    # Helper functions
+    # ===========================================================
+    def open_github_link(self):
+        webbrowser.open(GITHUB_URL)
 
 
 # ===========================================================
