@@ -49,7 +49,6 @@ def main():
     parser.add_argument('-q', '--query',        help='Keyword or phrase to search for',             default=None)
     parser.add_argument('-m', '--mode',         help='Search mode: recursive, folder, or file',     default='recursive')
     parser.add_argument('-r', '--reindex',      help='Force a rebuild of the index',                default=False,              action='store_true')
-    parser.add_argument('-l', '--limit',        help='Limits number of searches results returned',  default=30)
 
     # Retrieve the arguments
     args = parser.parse_args()

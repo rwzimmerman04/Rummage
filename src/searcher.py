@@ -6,7 +6,7 @@ import whoosh.index
 from whoosh.highlight import SentenceFragmenter
 from whoosh.qparser import QueryParser
 
-def search_index(query_string, index_dir, limit=30):
+def search_index(query_string, index_dir):
     """
     Search the index for a keyword or phrase.
     Returns a list of dicts with filename, page, and snippet.
@@ -21,8 +21,8 @@ def search_index(query_string, index_dir, limit=30):
         # Build the query
         query = QueryParser("content", idx.schema).parse(query_string)
 
-        # Execute the search with optional result cap
-        results = searcher.search(query, limit=limit)
+        # Execute the search
+        results = searcher.search(query, limit=None)
 
         # Use sentence boundaries for cleaner snippets
         results.fragmenter = SentenceFragmenter()
