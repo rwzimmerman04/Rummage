@@ -1,40 +1,38 @@
 # gui.py
-# tkinter GUI entry point for Rummage
+# customtkinter GUI entry point for Rummage
 # ===========================================================
 
 import tkinter as tk
+import customtkinter as ctk
 from tkinter import filedialog, messagebox
-import whoosh.index
 
-from indexer import index_documents
-from searcher import search_index
+# Set the appearance of the application
+ctk.set_appearance_mode("dark")
+ctk.set_default_color_theme("blue")
 
 # Constants
-GITHUB_URL  = "https://github.com/rwzimmerman04/Rummage"
-INDEX_DIR   = "../.index"
 APP_VERSION = "0.1"
-
-
 
 
 class RummageApp:
     def __init__(self, window):
-        # Create the window
-        self.window         = window
-        self.folder_path    = tk.StringVar(value="No folder selected...")
-        self.status_text    = tk.StringVar(value="No folder selected.")
-        self.needs_reindex  = False
-        self.last_folder    = None
-
-        # Set name and min size
+        # Store reference to the main window
+        self.window = window
         self.window.title("Rummage")
-        self.window.minsize(700, 600)
+        self.window.minsize(700, 650)
 
-        # Add the applications components to the window
+        # StringVars are tkinter variables that automatically update
+        # any widget that is bound to them when their value changes
+        self.folder_path = tk.StringVar(value="No folder selected...")
+        self.status_text = tk.StringVar(value="Ready.")
+
+        # Build each section of the UI in order
         self._build_menu()
         self._build_folder_section()
         self._build_search_bar()
+        self._build_warning_banner()
         self._build_results_panel()
+        self._build_status_bar()
 
 
     # ===========================================================
@@ -42,16 +40,30 @@ class RummageApp:
     # ===========================================================
 
     def _build_menu(self):
+        """
+        Builds the top menu bar with File and About menus.
+        tk.Menu is used here because customtkinter has no menu widget.
+        """
         menubar = tk.Menu(self.window, tearoff=0)
 
-        # Create the 'File' menu
+        # File menu: folder and app management
         file_menu = tk.Menu(menubar, tearoff=0)
+        file_menu.add_command(label="Open Folder")
+        file_menu.add_command(label="Save Results")
+        file_menu.add_command(label="Reindex")
+        file_menu.add_separator()
+        file_menu.add_command(label="Exit")
         menubar.add_cascade(label="File", menu=file_menu)
 
-        # Create the 'About' menu
+        # About menu: app info and help
         about_menu = tk.Menu(menubar, tearoff=0)
+        about_menu.add_command(label="About Rummage")
+        about_menu.add_command(label="View on GitHub")
+        about_menu.add_separator()
+        about_menu.add_command(label="Help")
         menubar.add_cascade(label="About", menu=about_menu)
 
+        # Attach the menu bar to the window
         self.window.config(menu=menubar)
 
 
@@ -60,32 +72,50 @@ class RummageApp:
     # ===========================================================
 
     def _build_folder_section(self):
-        # Add a label
-        frame = tk.LabelFrame(self.window, text="Document Folder", padx=8, pady=8)
+        """
+        Builds the document folder section.
+        Contains the folder path display, browse button, and mode selector.
+        """
+        # Outer container frame
+        frame = ctk.CTkFrame(self.window)
         frame.pack(fill="x", padx=12, pady=(12, 4))
 
-        # Folder path display and browse button
-        path_frame = tk.Frame(frame)
-        path_frame.pack(fill="x")
+        # Section label
+        ctk.CTkLabel(frame, text="DOCUMENT FOLDER",
+                     font=ctk.CTkFont(size=11, weight="bold"),
+                     text_color="gray")\
+            .pack(anchor="w", padx=10, pady=(8, 2))
 
-        tk.Entry(path_frame, textvariable=self.folder_path, state="readonly")\
+        # Row: folder path entry + browse button
+        path_frame = ctk.CTkFrame(frame, fg_color="transparent")
+        path_frame.pack(fill="x", padx=10, pady=(0, 6))
+
+        # Read-only entry displays the selected folder path
+        # textvariable binds it to self.folder_path so it updates automatically
+        ctk.CTkEntry(path_frame, textvariable=self.folder_path, state="readonly")\
             .pack(side="left", fill="x", expand=True, padx=(0, 6))
-        tk.Button(path_frame, text="Browse")\
+
+        # Create the browse button
+        ctk.CTkButton(path_frame, text="Browse", width=80)\
             .pack(side="left")
 
-        # Add a Mode to the radio buttons (acts as a group where only one can be selected)
+        # All three radio buttons share the same variable this way only one can be selected at a time
         self.mode = tk.StringVar(value="recursive")
-        mode_frame = tk.Frame(frame)
-        mode_frame.pack(anchor="w", pady=(6, 0))
+        mode_frame = ctk.CTkFrame(frame, fg_color="transparent")
+        mode_frame.pack(anchor="w", padx=10, pady=(0, 10))
 
-        # Add the buttons, the default mode has been set to recursive already in the mode
-        tk.Radiobutton(mode_frame, text="Recursive",    variable=self.mode, value="recursive").pack(side="left", padx=(0, 12))
-        tk.Radiobutton(mode_frame, text="Folder only",  variable=self.mode, value="folder").pack(side="left", padx=(0, 12))
-        tk.Radiobutton(mode_frame, text="Single file",  variable=self.mode, value="file").pack(side="left")
+        ctk.CTkLabel(mode_frame, text="Mode:", text_color="gray")\
+            .pack(side="left", padx=(0, 8))
 
-        # Create the Limit option
-        limit_frame = tk.Frame(frame)
-        limit_frame.pack(anchor="w", pady=(6, 0))
+        # tk.Radiobutton used here — customtkinter's radio button
+        # lacks good styling options for dark mode
+        for text, value in [("Recursive", "recursive"),
+                             ("Folder only", "folder"),
+                             ("Single file", "file")]:
+            tk.Radiobutton(mode_frame, text=text, variable=self.mode, value=value,
+                           bg="#2b2b2b", fg="white", selectcolor="#2b2b2b",
+                           activebackground="#2b2b2b", activeforeground="white")\
+                .pack(side="left", padx=(0, 12))
 
 
     # ===========================================================
@@ -93,24 +123,53 @@ class RummageApp:
     # ===========================================================
 
     def _build_search_bar(self):
-        frame = tk.Frame(self.window)
+        """
+        Builds the search bar with query entry and search button.
+        """
+        frame = ctk.CTkFrame(self.window, fg_color="transparent")
         frame.pack(fill="x", padx=12, pady=4)
 
-        # Create the entry box for searching
-        self.query_entry = tk.Entry(frame, font=("Helvetica", 12))
+        # Create the query entry box
+        self.query_entry = ctk.CTkEntry(
+            frame,
+            placeholder_text='Search keyword or "phrase"...',
+            font=ctk.CTkFont(size=13)
+        )
         self.query_entry.pack(side="left", fill="x", expand=True, padx=(0, 6))
 
-        # SSearch button
-        tk.Button(frame, text="Search")\
-            .pack(side="left")
+        # Create the search button
+        self.search_button = ctk.CTkButton(frame, text="Search", width=90)
+        self.search_button.pack(side="left")
 
-        # Search syntax helpful tip
-        tk.Label(self.window, text='Tip: use "quotes" for exact phrases', 
-                 font=("Helvetica", 9), fg="gray")\
+        # Create the hint label below the search bar
+        ctk.CTkLabel(self.window,
+                     text='Tip: use "quotes" for exact phrases',
+                     font=ctk.CTkFont(size=10),
+                     text_color="gray")\
             .pack(anchor="w", padx=14)
 
-            
 
+    # ===========================================================
+    # Warning Banner
+    # ===========================================================
+
+    def _build_warning_banner(self):
+        """
+        Builds the warning banner that appears when reindexing is needed.
+        Hidden by default -> shown and hidden dynamically with show_warning/hide_warning.
+        """
+        # Dark yellow background frame
+        self.warning_frame = ctk.CTkFrame(self.window, fg_color="#3d3000")
+
+        # Warning message label
+        self.warning_label = ctk.CTkLabel(
+            self.warning_frame,
+            text="",
+            text_color="#ffc107",
+            wraplength=640,
+            justify="left"
+        )
+        self.warning_label.pack(padx=12, pady=6)
 
 
     # ===========================================================
@@ -118,40 +177,36 @@ class RummageApp:
     # ===========================================================
 
     def _build_results_panel(self):
-        frame = tk.LabelFrame(self.window, text="Results", padx=6, pady=6)
-        frame.pack(fill="both", expand=True, padx=12, pady=(4, 4))
+        """
+        Builds the results panel.
+        """
+        # Create results section label
+        ctk.CTkLabel(self.window, text="RESULTS",
+                     font=ctk.CTkFont(size=11, weight="bold"),
+                     text_color="gray")\
+            .pack(anchor="w", padx=14, pady=(8, 2))
 
-        # Scrollable text widget for results
-        scrollbar = tk.Scrollbar(frame)
-        scrollbar.pack(side="right", fill="y")
-
-        self.results_text = tk.Text(
-            frame,
-            state="disabled",
-            yscrollcommand=scrollbar.set,
-            wrap="word",
-            font=("Helvetica", 10),
-            padx=6,
-            pady=6,
-            cursor="arrow"
-        )
-        self.results_text.pack(fill="both", expand=True)
-        scrollbar.config(command=self.results_text.yview)
-
-        # Text tags for styling
-        self.results_text.tag_config("filename",    font=("Helvetica", 10, "bold"))
-        self.results_text.tag_config("page",        foreground="gray")
-        self.results_text.tag_config("snippet",     font=("Helvetica", 10))
-        self.results_text.tag_config("match",       font=("Helvetica", 10, "bold"))
-        self.results_text.tag_config("divider",     foreground="#cccccc")
-
+        # Container frame for text widget and scrollbar
+        frame = ctk.CTkFrame(self.window)
+        frame.pack(fill="both", expand=True, padx=12, pady=(0, 4))
 
 
     # ===========================================================
-    # Actions
+    # Status Bar
     # ===========================================================
 
-    # ...TO-DO...
+    def _build_status_bar(self):
+        """
+        Builds the status bar at the bottom of the window.
+        """
+        frame = ctk.CTkFrame(self.window, height=28, corner_radius=0)
+        frame.pack(fill="x", side="bottom")
+
+        ctk.CTkLabel(frame,
+                     textvariable=self.status_text,
+                     font=ctk.CTkFont(size=10),
+                     text_color="gray")\
+            .pack(side="left", padx=8)
 
 
 # ===========================================================
@@ -159,9 +214,13 @@ class RummageApp:
 # ===========================================================
 
 def main():
-    window = tk.Tk()
+    # Create the main window and pass it to RummageApp
+    window = ctk.CTk()
     app = RummageApp(window)
+
+    # Start the event loop
     window.mainloop()
+
 
 if __name__ == "__main__":
     main()
