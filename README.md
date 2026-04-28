@@ -104,17 +104,23 @@ Rummage/
 
 ## Development Roadmap
 
-- [X] PDF Support
-- [X] Phrase Search
+- [X] PDF support
+- [X] Phrase search via positional indexing
+- [X] Recursive, folder, and single file modes
 - [X] CLI interface and argument parser
-- [X] Result limit (--limit)
-- [ ] tkinter GUI
-- [ ] Windows executable with PyInstaller
-- [ ] DOCX Support
-- [ ] TXT Support
-- [ ] Incremental indexing (only re-index changed files)
-- [ ] Stemming toggle (--stemming) for root word matching e.g. "knights" → "knight"
-- *...something I should add?*
+- [X] Parallel extraction with pymupdf
+- [ ] customtkinter GUI
+- [ ] Background threading — UI stays responsive during indexing
+- [ ] Live indexing progress in status bar
+- [ ] Windows executable via PyInstaller
+- [ ] DOCX support
+- [ ] TXT support
+- [ ] EPUB support
+- [ ] Incremental indexing — only re-index changed files
+- [ ] Stemming toggle for root word matching e.g. "knights" → "knight"
+- [ ] Open PDF to exact page from results
+- [ ] Dark/light mode toggle
+- [ ] Remember last used folder between sessions
 
 ---
 
