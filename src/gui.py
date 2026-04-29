@@ -62,19 +62,19 @@ class RummageApp:
 
         # File menu: folder and app management
         file_menu = tk.Menu(menubar, tearoff=0)
-        file_menu.add_command(label="Open Folder")
-        file_menu.add_command(label="Save Results")
-        file_menu.add_command(label="Reindex")
+        file_menu.add_command(label="Open Folder",      command=self.browse_folder)
+        file_menu.add_command(label="Save Results",     command=self.save_results)
+        file_menu.add_command(label="Reindex",)
         file_menu.add_separator()
-        file_menu.add_command(label="Exit")
+        file_menu.add_command(label="Exit",             command=self.window.quit)
         menubar.add_cascade(label="File", menu=file_menu)
 
         # About menu: app info and help
         about_menu = tk.Menu(menubar, tearoff=0)
-        about_menu.add_command(label="About Rummage", command=self.show_about)
-        about_menu.add_command(label="View on GitHub", command=lambda:self.open_link(GITHUB_URL))
+        about_menu.add_command(label="About Rummage",   command=self.show_about)
+        about_menu.add_command(label="View on GitHub",  command=lambda:self.open_link(GITHUB_URL))
         about_menu.add_separator()
-        about_menu.add_command(label="Help", command=self.show_help)
+        about_menu.add_command(label="Help",            command=self.show_help)
         menubar.add_cascade(label="About", menu=about_menu)
 
         # Attach the menu bar to the window
@@ -127,8 +127,9 @@ class RummageApp:
                              ("Folder only", "folder"),
                              ("Single file", "file")]:
             tk.Radiobutton(mode_frame, text=text, variable=self.mode, value=value,
-                           bg="#2b2b2b", fg="white", selectcolor="#2b2b2b",
-                           activebackground="#2b2b2b", activeforeground="white")\
+                            command=self._on_mode_change,
+                            bg="#2b2b2b", fg="white", selectcolor="#2b2b2b",
+                            activebackground="#2b2b2b", activeforeground="white")\
                 .pack(side="left", padx=(0, 12))
 
 
@@ -152,7 +153,7 @@ class RummageApp:
         self.query_entry.pack(side="left", fill="x", expand=True, padx=(0, 6))
 
         # Create the search button
-        self.search_button = ctk.CTkButton(frame, text="Search", width=90)
+        self.search_button = ctk.CTkButton(frame, text="Search", width=90, command=self.run_search)
         self.search_button.pack(side="left")
 
         # Create the hint label below the search bar
@@ -198,7 +199,7 @@ class RummageApp:
         """
         Hide the warning label
         """
-        self.warning_label.pack_forget()
+        self.warning_frame.pack_forget()
 
     # ===========================================================
     # Results Panel
@@ -242,6 +243,14 @@ class RummageApp:
         self.results_text.tag_config("divider",     foreground="#444444")
 
 
+    def display_results(self, matches):
+        """
+        Renders match list into the results text widget. 
+        Parses <b> tags from Whoosh snippets to bolden matched words.
+        """
+        pass    # TO-DO: render the results
+
+
     # ===========================================================
     # Status Bar
     # ===========================================================
@@ -267,10 +276,15 @@ class RummageApp:
         """
         Open folder picker and detect if reindex is needed.
         """
-        path = filedialog.askdirectory()
+        if self.mode.get() == "file":
+            path = filedialog.askopenfilename(
+                filetypes=[("PDF files", "*.pdf"), ("All files", "*.*")]
+            )
+        else:
+            path = filedialog.askdirectory()
+
         if path:
             self.folder_path.set(path)
-
             # Flag reindex if folder changed
             if path != self.last_folder:
                 self.needs_reindex = True
@@ -279,7 +293,6 @@ class RummageApp:
                 else:
                     self.show_warning("No index found: Index will be built on first search.")
             self.status_text.set(f"Folder: {path}")
-
 
 
     def _set_ui_enabled(self, enabled):
@@ -317,6 +330,35 @@ class RummageApp:
             "  Select a folder and click Search.\n"
             "  The index is built automatically on first search.\n"
             "  Use File > Reindex to force a rebuild.")
+
+    
+    def _on_mode_change(self):
+        """
+        Called when the user switches mode.
+        Resets the folder path only when switching between file and folder modes
+        since they require different path types.
+        """
+        current_mode = self.mode.get()
+        current_path = self.folder_path.get()
+
+        # Only reset if switching between incompatible path types
+        if current_mode == "file" and pathlib.Path(current_path).is_dir():
+            self._reset_path()
+        elif current_mode in ("recursive", "folder") and pathlib.Path(current_path).is_file():
+            self._reset_path()
+
+
+    def _reset_path(self):
+        """Clears the selected path and resets related state."""
+        self.folder_path.set("No folder selected...")
+        self.last_folder   = None
+        self.needs_reindex = False
+        self.hide_warning()
+        self.status_text.set("Ready.")
+
+
+    def save_results(self):
+        pass    # TO-DO: Save results to file
 
 
 
