@@ -109,7 +109,7 @@ Rummage/
 - [X] Recursive, folder, and single file modes
 - [X] CLI interface and argument parser
 - [X] Parallel extraction with pymupdf
-- [ ] customtkinter GUI
+- [X] customtkinter GUI
 - [ ] Background threading — UI stays responsive during indexing
 - [ ] Live indexing progress in status bar
 - [ ] Windows executable via PyInstaller
