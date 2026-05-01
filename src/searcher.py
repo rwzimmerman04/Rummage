@@ -3,7 +3,7 @@
 # ===========================================================
 
 import whoosh.index
-from whoosh.highlight import SentenceFragmenter
+from whoosh.highlight import ContextFragmenter
 from whoosh.qparser import QueryParser
 
 def search_index(query_string, index_dir):
@@ -25,7 +25,7 @@ def search_index(query_string, index_dir):
         results = searcher.search(query, limit=None)
 
         # Use sentence boundaries for cleaner snippets
-        results.fragmenter = SentenceFragmenter()
+        results.fragmenter = ContextFragmenter(surround=20)
 
         # Build a clean list of match dictionaries
         matches = []
