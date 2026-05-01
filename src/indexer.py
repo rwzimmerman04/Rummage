@@ -54,7 +54,7 @@ def _extract_worker(path):
     return results
 
 
-def index_documents(path, index_dir, mode="recursive"):
+def index_documents(path, index_dir, mode="recursive", progress_callback=None):
     """
     Retrieves files based on the selected mode, extracts text, 
     and writes each page as document into the Whoosh index
@@ -67,7 +67,6 @@ def index_documents(path, index_dir, mode="recursive"):
 
     # Retrieve the index
     idx = create_or_open_index(index_dir)
-
     # Fetch the writer
     writer = idx.writer()
 
@@ -81,12 +80,14 @@ def index_documents(path, index_dir, mode="recursive"):
     elif mode == "file":
         files = [pathlib.Path(path)]
 
+    total = len(files)
+
     # Extract text in parallel
     with Pool(processes=cpu_count()) as pool:
         results = pool.map(_extract_worker, files)
 
-    # Write to index single-threaded
-    for file_results in results:
+    # Write to index single-threaded, report progress after each file
+    for i, file_results in enumerate(results):
         for _path, filename, page_num, text in file_results:
             writer.add_document(
                 path=_path,
@@ -94,6 +95,12 @@ def index_documents(path, index_dir, mode="recursive"):
                 page=page_num,
                 content=text
             )
+        if progress_callback:
+            progress_callback(i + 1, total)
+
+    # Notify that we are now writing the index
+    if progress_callback:
+        progress_callback(total, total, writing=True)
 
     writer.commit()
 
