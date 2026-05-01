@@ -207,22 +207,40 @@ class RummageApp:
 
     def _build_results_panel(self):
         """
-        Builds the results panel.
+        Builds the results panel with two sections.
+        - SUMMARY: Scrollabel list of buttons, one per book, showing matched page numbers
+        - CONTEXT: Scrollable text area showing snippets grouped by book then page
         """
-        # Create results section label
-        ctk.CTkLabel(self.window, text="RESULTS",
+        
+        # SUMMARY SECTION
+
+        ctk.CTkLabel(self.window, text="SUMMARY",
                      font=ctk.CTkFont(size=11, weight="bold"),
                      text_color="gray")\
             .pack(anchor="w", padx=14, pady=(8, 2))
+
+        self.summary_frame = ctk.CTkScrollableFrame(self.window, height=120)
+        self.summary_frame.pack(fill="x", padx=12, pady=(0, 4))
+
+        # CONTEXT SECTION
+
+        ctk.CTkLabel(self.window, text="CONTEXT",
+                     font=ctk.CTkFont(size=11, weight="bold"),
+                     text_color="gray")\
+            .pack(anchor="w", padx=14, pady=(4, 2))
 
         # Container frame for text widget and scrollbar
         frame = ctk.CTkFrame(self.window)
         frame.pack(fill="both", expand=True, padx=12, pady=(0, 4))
 
+        scrollbar = tk.Scrollbar(frame)
+        scrollbar.pack(side="right", fill="y")
+
         # Build the results area
         self.results_text = tk.Text(
             frame,
             state="disabled",
+            yscrollcommand=scrollbar.set,
             wrap="word",
             font=("Helvetica", 10),
             bg="#2b2b2b",
@@ -234,13 +252,14 @@ class RummageApp:
             insertbackground="white"
         )
         self.results_text.pack(fill="both", expand=True)
+        scrollbar.config(command=self.results_text.yview)
 
         # Define tags for stlying the results area
-        self.results_text.tag_config("filename",    font=("Helvetica", 10, "bold"), foreground="#4fc3f7")
-        self.results_text.tag_config("page",        foreground="#888888")
-        self.results_text.tag_config("snippet",     font=("Helvetica", 10), foreground="#dddddd")
-        self.results_text.tag_config("match",       font=("Helvetica", 10, "bold"), foreground="#ffc107")
-        self.results_text.tag_config("divider",     foreground="#444444")
+        self.results_text.tag_config("book",     font=("Helvetica", 11, "bold"), foreground="#4fc3f7")
+        self.results_text.tag_config("page",     font=("Helvetica", 10, "bold"), foreground="#888888")
+        self.results_text.tag_config("snippet",  font=("Helvetica", 10),         foreground="#dddddd")
+        self.results_text.tag_config("match",    font=("Helvetica", 10, "bold"), foreground="#ffc107")
+        self.results_text.tag_config("divider",  foreground="#444444")
 
 
     def display_results(self, matches):
@@ -249,60 +268,60 @@ class RummageApp:
         Parses <b> tags from Whoosh snippets to bolden matched words.
         """
         
-        # Enableediting temoprarily for result updating
-        self.results_text.config(state="normal")
-        self.results_text.delete("1.0", "end")
+        # # Enableediting temoprarily for result updating
+        # self.results_text.config(state="normal")
+        # self.results_text.delete("1.0", "end")
 
-        if not matches:
-            self.results_text.insert("end", "No matches found.")
-            self.results_text.config(state="disabled")
-            return
+        # if not matches:
+        #     self.results_text.insert("end", "No matches found.")
+        #     self.results_text.config(state="disabled")
+        #     return
 
-        for m in matches:
-            # Filename and page number on one line
-            self.results_text.insert("end", m["filename"], "filename")
-            self.results_text.insert("end", f" - page {m['page']}\n", "page")
+        # for m in matches:
+        #     # Filename and page number on one line
+        #     self.results_text.insert("end", m["filename"], "filename")
+        #     self.results_text.insert("end", f" - page {m['page']}\n", "page")
 
-            # Empty line after the header - makes it less corwded :)
-            self.results_text.insert("end", "\n")
+        #     # Empty line after the header - makes it less corwded :)
+        #     self.results_text.insert("end", "\n")
 
-            # Split fragments with "..." as Whoosh seperator
-            # Each fragment is one matching sentence
-            snippet = m["snippet"].strip()
-            if not snippet:
-                self.results_text.insert("end", "... (match found - open file to view context)\n", "page")
-            else:
-                fragments = m["snippet"].split("...")
-            for fragment in fragments:
-                fragment = fragment.strip()     # Clean the fragment
-                if not fragment:
-                    continue
+        #     # Split fragments with "..." as Whoosh seperator
+        #     # Each fragment is one matching sentence
+        #     snippet = m["snippet"].strip()
+        #     if not snippet:
+        #         self.results_text.insert("end", "... (match found - open file to view context)\n", "page")
+        #     else:
+        #         fragments = m["snippet"].split("...")
+        #     for fragment in fragments:
+        #         fragment = fragment.strip()     # Clean the fragment
+        #         if not fragment:
+        #             continue
             
-                # leading ellipses to show this is a snippet, not the full page
-                self.results_text.insert("end", "... ", "page")
+        #         # leading ellipses to show this is a snippet, not the full page
+        #         self.results_text.insert("end", "... ", "page")
 
-                # Remove nextline chars
-                fragment = fragment.replace("\n", " ").replace("  ", " ").strip()
+        #         # Remove nextline chars
+        #         fragment = fragment.replace("\n", " ").replace("  ", " ").strip()
 
-                # Parse <b> tags - bold yellow for matched words, normal for all other words
-                while "<b" in fragment:
-                    pre, remaining = fragment.split("<b", 1)
-                    _, remaining = remaining.split(">", 1)
-                    word, remaining = remaining.split("</b>", 1)
-                    self.results_text.insert("end", pre, "snippet")
-                    self.results_text.insert("end", word, "match")
-                    fragment = remaining
+        #         # Parse <b> tags - bold yellow for matched words, normal for all other words
+        #         while "<b" in fragment:
+        #             pre, remaining = fragment.split("<b", 1)
+        #             _, remaining = remaining.split(">", 1)
+        #             word, remaining = remaining.split("</b>", 1)
+        #             self.results_text.insert("end", pre, "snippet")
+        #             self.results_text.insert("end", word, "match")
+        #             fragment = remaining
     
-                # Insert remaing text after the last found match
-                self.results_text.insert("end", fragment + "\n", "snippet")
+        #         # Insert remaing text after the last found match
+        #         self.results_text.insert("end", fragment + "\n", "snippet")
 
-            # Empty line then divider then empty line between results
-            self.results_text.insert("end", "\n")
-            self.results_text.insert("end", "-" * 60 + "\n", "divider")
-            self.results_text.insert("end", "\n")
+        #     # Empty line then divider then empty line between results
+        #     self.results_text.insert("end", "\n")
+        #     self.results_text.insert("end", "-" * 60 + "\n", "divider")
+        #     self.results_text.insert("end", "\n")
 
-        # Lock the text window for the results after making changes
-        self.results_text.config(state="disabled")
+        # # Lock the text window for the results after making changes
+        # self.results_text.config(state="disabled")
 
 
     # ===========================================================
