@@ -250,7 +250,25 @@ class RummageApp:
         """
         
         # Enableediting temoprarily for result updating
+        self.results_text.config(state="normal")
+        self.results_text.delete("1.0", "end")
 
+        if not matches:
+            self.results_text.insert("end", "No matches found.")
+            self.results_text.config(state="disabled")
+            return
+
+        for m in matches:
+            # Filename and page number on one line
+            self.results_text.insert("end", m["filename"], "filename")
+            self.results_text.insert("end", f" - page {m['page']}\n", "page")
+
+            # Empty line after the header - makes it less corwded :)
+            self.results_text.insert("end", "\n")
+
+            # TO-DO: SPlit fragments and collect surrounding context, print out each snippet on new line
+    
+        self.results_text.config(state="disabled")
 
 
     # ===========================================================
