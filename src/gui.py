@@ -266,8 +266,42 @@ class RummageApp:
             # Empty line after the header - makes it less corwded :)
             self.results_text.insert("end", "\n")
 
-            # TO-DO: SPlit fragments and collect surrounding context, print out each snippet on new line
+            # Split fragments with "..." as Whoosh seperator
+            # Each fragment is one matching sentence
+            snippet = m["snippet"].strip()
+            if not snippet:
+                self.results_text.insert("end", "... (match found - open file to view context)\n", "page")
+            else:
+                fragments = m["snippet"].split("...")
+            for fragment in fragments:
+                fragment = fragment.strip()     # Clean the fragment
+                if not fragment:
+                    continue
+            
+                # leading ellipses to show this is a snippet, not the full page
+                self.results_text.insert("end", "... ", "page")
+
+                # Remove nextline chars
+                fragment = fragment.replace("\n", " ").replace("  ", " ").strip()
+
+                # Parse <b> tags - bold yellow for matched words, normal for all other words
+                while "<b" in fragment:
+                    pre, remaining = fragment.split("<b", 1)
+                    _, remaining = remaining.split(">", 1)
+                    word, remaining = remaining.split("</b>", 1)
+                    self.results_text.insert("end", pre, "snippet")
+                    self.results_text.insert("end", word, "match")
+                    fragment = remaining
     
+                # Insert remaing text after the last found match
+                self.results_text.insert("end", fragment + "\n", "snippet")
+
+            # Empty line then divider then empty line between results
+            self.results_text.insert("end", "\n")
+            self.results_text.insert("end", "-" * 60 + "\n", "divider")
+            self.results_text.insert("end", "\n")
+
+        # Lock the text window for the results after making changes
         self.results_text.config(state="disabled")
 
 
