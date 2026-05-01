@@ -33,6 +33,6 @@ def search_index(query_string, index_dir):
             matches.append({
                 "filename": r["filename"],
                 "page": r["page"],
-                "snippet": r.highlights("content", top=30)  # <b> tags kept for GUI rendering
+                "snippet": r.highlights("content", top=50)  # <b> tags kept for GUI rendering
             })
         return matches
