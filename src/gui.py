@@ -323,6 +323,12 @@ class RummageApp:
         # # Lock the text window for the results after making changes
         # self.results_text.config(state="disabled")
 
+    def _jump_to(self, filename):
+        """
+        Scrolls the context area to the book section matching the given filename.
+        """
+        mark = f"mark_{filename}"
+        self.results_text.see(mark)
 
     # ===========================================================
     # Status Bar
