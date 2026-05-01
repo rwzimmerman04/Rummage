@@ -33,6 +33,9 @@ class RummageApp:
         self.window.title("Rummage")
         self.window.minsize(700, 650)
 
+         # Handle window close button (X) properly
+        self.window.protocol("WM_DELETE_WINDOW", self.on_close)
+
         # StringVars are tkinter variables that automatically update
         # any widget that is bound to them when their value changes
         self.folder_path = tk.StringVar(value="No folder selected...")
@@ -66,7 +69,7 @@ class RummageApp:
         file_menu.add_command(label="Save Results",     command=self.save_results)
         file_menu.add_command(label="Reindex",          command=self.force_reindex)
         file_menu.add_separator()
-        file_menu.add_command(label="Exit",             command=self.window.quit)
+        file_menu.add_command(label="Exit",             command=self.on_close)
         menubar.add_cascade(label="File", menu=file_menu)
 
         # About menu: app info and help
@@ -141,27 +144,39 @@ class RummageApp:
         """
         Builds the search bar with query entry and search button.
         """
-        frame = ctk.CTkFrame(self.window, fg_color="transparent")
-        frame.pack(fill="x", padx=12, pady=4)
+
+        # Outer container frame
+        frame = ctk.CTkFrame(self.window)
+        frame.pack(fill="x", padx=12, pady=(12, 4))
+
+        # Section label
+        ctk.CTkLabel(frame, text="SEARCH QUERY",
+                     font=ctk.CTkFont(size=11, weight="bold"),
+                     text_color="gray")\
+            .pack(anchor="w", padx=10, pady=(8, 2))
+
+        # Row: folder path entry + browse button
+        path_frame = ctk.CTkFrame(frame, fg_color="transparent")
+        path_frame.pack(fill="x", padx=10, pady=(0, 6))
 
         # Create the query entry box
         self.query_entry = ctk.CTkEntry(
-            frame,
+            path_frame,
             placeholder_text='Search keyword or "phrase"...',
             font=ctk.CTkFont(size=13)
         )
         self.query_entry.pack(side="left", fill="x", expand=True, padx=(0, 6))
 
         # Create the search button
-        self.search_button = ctk.CTkButton(frame, text="Search", width=90, command=self.run_search)
+        self.search_button = ctk.CTkButton(path_frame, text="Search", width=80, command=self.run_search)
         self.search_button.pack(side="left")
 
         # Create the hint label below the search bar
-        ctk.CTkLabel(self.window,
+        ctk.CTkLabel(frame,
                      text='Tip: use "quotes" for exact phrases',
                      font=ctk.CTkFont(size=10),
                      text_color="gray")\
-            .pack(anchor="w", padx=14)
+            .pack(side="bottom", anchor="w", padx=14)
 
 
     # ===========================================================
@@ -212,38 +227,53 @@ class RummageApp:
         - CONTEXT: Scrollable text area showing snippets grouped by book then page
         """
         
+        # RESULTS WRAPPER SECTION
+
+        outer = ctk.CTkFrame(self.window, fg_color="transparent")
+        outer.pack(fill="both", expand=True, padx=12, pady=(4,4))
+
+
+
         # SUMMARY SECTION
 
-        ctk.CTkLabel(self.window, text="SUMMARY",
+        left = ctk.CTkFrame(outer)
+        left.pack(side="left", fill="y", padx=(0,6))
+
+        ctk.CTkLabel(left, text="SUMMARY",
                      font=ctk.CTkFont(size=11, weight="bold"),
                      text_color="gray")\
-            .pack(anchor="w", padx=14, pady=(8, 2))
+            .pack(anchor="w", padx=10, pady=(8, 4))
 
-        self.summary_frame = ctk.CTkScrollableFrame(self.window, height=120)
-        self.summary_frame.pack(fill="x", padx=12, pady=(0, 4))
+        self.summary_frame = ctk.CTkScrollableFrame(left, width=180)
+        self.summary_frame.pack(fill="both", expand=True, padx=6, pady=(0, 8))
+
+
 
         # CONTEXT SECTION
 
-        ctk.CTkLabel(self.window, text="CONTEXT",
+        right = ctk.CTkFrame(outer)
+        right.pack(side="right", fill="both", expand=True)
+
+        ctk.CTkLabel(right, text="CONTEXT",
                      font=ctk.CTkFont(size=11, weight="bold"),
                      text_color="gray")\
-            .pack(anchor="w", padx=14, pady=(4, 2))
+            .pack(anchor="w", padx=10, pady=(8, 4))
 
         # Container frame for text widget and scrollbar
-        frame = ctk.CTkFrame(self.window)
-        frame.pack(fill="both", expand=True, padx=12, pady=(0, 4))
+        text_frame = ctk.CTkFrame(right)
+        text_frame.pack(fill="both", expand=True, padx=6, pady=(0, 8))
 
-        scrollbar = tk.Scrollbar(frame)
+        scrollbar = tk.Scrollbar(text_frame)
         scrollbar.pack(side="right", fill="y")
 
         # Build the results area
         self.results_text = tk.Text(
-            frame,
+            text_frame,
             state="disabled",
             yscrollcommand=scrollbar.set,
             wrap="word",
             font=("Helvetica", 10),
-            bg="#2b2b2b",
+            bg="gray20",
             fg="#ffffff",
             padx=10,
             pady=8,
@@ -268,67 +298,122 @@ class RummageApp:
         Parses <b> tags from Whoosh snippets to bolden matched words.
         """
         
+        # PRE-PROCESSING/SETUP SECTION
+
         # # Enableediting temoprarily for result updating
-        # self.results_text.config(state="normal")
-        # self.results_text.delete("1.0", "end")
+        self.results_text.config(state="normal")
+        self.results_text.delete("1.0", "end")
 
-        # if not matches:
-        #     self.results_text.insert("end", "No matches found.")
-        #     self.results_text.config(state="disabled")
-        #     return
+        # Clear the old summary buttons
+        for widget in self.summary_frame.winfo_children():
+            widget.destroy()
 
-        # for m in matches:
-        #     # Filename and page number on one line
-        #     self.results_text.insert("end", m["filename"], "filename")
-        #     self.results_text.insert("end", f" - page {m['page']}\n", "page")
+        # If not matches, notify user and disable text area -> exit afterwards!
+        if not matches:
+            self.results_text.insert("end", "No matches found.")
+            self.results_text.config(state="disabled")
+            return
 
-        #     # Empty line after the header - makes it less corwded :)
-        #     self.results_text.insert("end", "\n")
+        # Group the matches by book and page number
+        grouped = {}
+        for m in sorted(matches, key=lambda x: (x["filename"], x["page"])):
+            grouped.setdefault(m["filename"], []).append(m)
 
-        #     # Split fragments with "..." as Whoosh seperator
-        #     # Each fragment is one matching sentence
-        #     snippet = m["snippet"].strip()
-        #     if not snippet:
-        #         self.results_text.insert("end", "... (match found - open file to view context)\n", "page")
-        #     else:
-        #         fragments = m["snippet"].split("...")
-        #     for fragment in fragments:
-        #         fragment = fragment.strip()     # Clean the fragment
-        #         if not fragment:
-        #             continue
-            
-        #         # leading ellipses to show this is a snippet, not the full page
-        #         self.results_text.insert("end", "... ", "page")
+        # Sort the groups by number of matches descending per book
+        grouped = dict(sorted(grouped.items(), key=lambda x: len(x[1]), reverse=True))
 
-        #         # Remove nextline chars
-        #         fragment = fragment.replace("\n", " ").replace("  ", " ").strip()
 
-        #         # Parse <b> tags - bold yellow for matched words, normal for all other words
-        #         while "<b" in fragment:
-        #             pre, remaining = fragment.split("<b", 1)
-        #             _, remaining = remaining.split(">", 1)
-        #             word, remaining = remaining.split("</b>", 1)
-        #             self.results_text.insert("end", pre, "snippet")
-        #             self.results_text.insert("end", word, "match")
-        #             fragment = remaining
-    
-        #         # Insert remaing text after the last found match
-        #         self.results_text.insert("end", fragment + "\n", "snippet")
+        # SUMMARY BUTTONS SECTION
 
-        #     # Empty line then divider then empty line between results
-        #     self.results_text.insert("end", "\n")
-        #     self.results_text.insert("end", "-" * 60 + "\n", "divider")
-        #     self.results_text.insert("end", "\n")
+        for i, (filename, pages) in enumerate(grouped.items()):
+            page_nums = [str(p["page"]) for p in pages]
 
-        # # Lock the text window for the results after making changes
-        # self.results_text.config(state="disabled")
+            # Shorten page list if too long
+            if len(page_nums) > 5:
+                page_str = ", ".join(page_nums[:5]) + f"\n + {len(page_nums) - 5} more"
+            else:
+                page_str = ", ".join(page_nums)
 
-    def _jump_to(self, filename):
+            # Shorten filename if too long for the narrow panel
+            # short_name = filename if len(filename) < 22 else filename[:20] + "..."
+
+            label = f"{filename}\npp. {page_str}"
+
+            self._make_summary_button(self.summary_frame, filename, page_str, i)
+
+        # CONTEXT AREA SECTION
+
+        for i, (filename, pages) in enumerate(grouped.items()):
+
+            # Insert an invisible anchor, set the mark on it
+            self.results_text.insert("end", "\u200b", "snippet")  # zero-width space
+            mark = f"mark_{i}"
+            # Mark the position BEFORE the anchor character
+            self.results_text.mark_set(mark, f"end-2c")
+            self.results_text.mark_gravity(mark, "left")
+
+            # Create book header
+            self.results_text.insert("end", f"{filename}\n", "book")
+            self.results_text.insert("end", "-" * 60 + "\n", "divider")
+
+            for m in pages:
+                # Create page subheader
+                self.results_text.insert("end", f"\nPage {m['page']}\n", "page")
+
+                # Split on Whoosh's fragment separator first
+                fragments = m["snippet"].split("...")
+                for fragment in fragments:
+                    fragment = fragment.replace("\n", " ").replace("\r", " ").replace("  ", " ").strip()
+                    if not fragment:
+                        continue
+
+                    # Parse <b> tags within each fragment
+                    self.results_text.insert("end", "  ", "snippet")
+                    while "<b" in fragment:
+                        pre, rest  = fragment.split("<b", 1)
+                        _, rest    = rest.split(">", 1)
+                        word, rest = rest.split("</b>", 1)
+                        self.results_text.insert("end", pre, "snippet")
+                        self.results_text.insert("end", word, "match")
+                        fragment = rest
+                    self.results_text.insert("end", fragment + "\n", "snippet")
+
+            # Spacer between books
+            self.results_text.insert("end", "\n\n")
+
+        self.results_text.config(state="disabled")
+
+
+    def _jump_to(self, idx):
         """
         Scrolls the context area to the book section matching the given filename.
         """
-        mark = f"mark_{filename}"
-        self.results_text.see(mark)
+        self.results_text.see(f"mark_{idx}")
+
+
+    def _make_summary_button(self, parent, filename, page_str, idx):
+        """
+        Creates a styled summary entry with bold filename and smaller page numbers.
+        """
+        frame = ctk.CTkFrame(parent, cursor="hand2", fg_color="#1F6AA5")
+        frame.pack(fill="x", padx=2, pady=3)
+
+        # Bold filename label
+        ctk.CTkLabel(frame, text=filename,
+                    font=ctk.CTkFont(size=10, weight="bold"),
+                    anchor="w", justify="left", wraplength=170)\
+            .pack(fill="x", padx=8, pady=(6, 0))
+
+        # Smaller gray page numbers
+        ctk.CTkLabel(frame, text=f"pp. {page_str}",
+                    font=ctk.CTkFont(size=9),
+                    text_color="lightgray",
+                    anchor="w", justify="left")\
+            .pack(fill="x", padx=8, pady=(0, 6))
+
+        # Bind click on frame and both labels
+        for widget in [frame] + list(frame.winfo_children()):
+            widget.bind("<Button-1>", lambda e, i=idx: self._jump_to(i))
 
     # ===========================================================
     # Status Bar
@@ -533,6 +618,12 @@ class RummageApp:
         pass    # TO-DO: Save results to file
 
 
+    def on_close(self):
+        """
+        Called when the user closes the window.
+        Destroys the window — daemon threads die automatically.
+        """
+        self.window.destroy()
 
 
 # ===========================================================
