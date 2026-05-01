@@ -64,7 +64,7 @@ class RummageApp:
         file_menu = tk.Menu(menubar, tearoff=0)
         file_menu.add_command(label="Open Folder",      command=self.browse_folder)
         file_menu.add_command(label="Save Results",     command=self.save_results)
-        file_menu.add_command(label="Reindex",)
+        file_menu.add_command(label="Reindex",          command=self.force_reindex)
         file_menu.add_separator()
         file_menu.add_command(label="Exit",             command=self.window.quit)
         menubar.add_cascade(label="File", menu=file_menu)
@@ -248,7 +248,9 @@ class RummageApp:
         Renders match list into the results text widget. 
         Parses <b> tags from Whoosh snippets to bolden matched words.
         """
-        pass    # TO-DO: render the results
+        
+        # Enableediting temoprarily for result updating
+
 
 
     # ===========================================================
@@ -293,6 +295,97 @@ class RummageApp:
                 else:
                     self.show_warning("No index found: Index will be built on first search.")
             self.status_text.set(f"Folder: {path}")
+
+
+    def run_search(self):
+        """
+        Reindex if neededon a background thread, then run the search.
+        """
+        query = self.query_entry.get().strip()
+        folder = self.folder_path.get()
+
+        if folder == "No folder selected...":
+            messagebox.showwarning("No folder", "Please select a folder first.")
+            return
+        if not query:
+            messagebox.showwarning("No query", "Please enter a search term.")
+            return
+
+        if self.needs_reindex:
+            # Disable the search button while indexing
+            self._set_ui_enabled(False)
+            self.status_text.set("Indexing... please wait.")
+            # Spawn a thread for the indexing process
+            thread = threading.Thread(
+                target=self._run_index,
+                args=(folder, query),
+                daemon=True
+            )
+            thread.start()  # Start the indexing thread
+        else:
+            self._do_search(query)
+
+
+    def force_reindex(self):
+        """Force a full reindex from the menu on a background thread."""
+        folder = self.folder_path.get()
+
+        # Validation
+        if folder == "No folder selected...":
+            messagebox.showwarning("No folder", "Please select a folder first.")
+            return
+
+        self._set_ui_enabled(False)
+        self.status_text.set("Reindexing... please wait.")
+        # Spawn a thread for the indexing process
+        thread = threading.Thread(
+            target=self._run_index,
+            args=(folder,),
+            daemon=True
+        )
+        thread.start()      # Start the indexing thread
+
+
+    def _run_index(self, folder, query=None):
+        """
+        Background thread worker: Indexes then optionally searches.
+        query=None means just reindex, no search after.
+        """
+        index_documents(folder, INDEX_DIR, self.mode.get(), 
+                        progress_callback=self._on_progress)
+        self.last_folder = folder
+        self.needs_reindex = False
+        self.window.after(0, self.hide_warning)
+        self.window.after(0, lambda: self._set_ui_enabled(True))
+
+        if query:
+            self.window.after(0, lambda: self._do_search(query))
+        else:
+            self.window.after(0, lambda: self.status_text.set("Reindex complete!"))
+
+
+    def _on_progress(self, current, total, writing=False):
+        """
+        Called by indexer after each file: Updates the status bar safely.
+        writing=True means extract is done and we are writing to disk/index.
+        """
+        if writing:
+            self.window.after(0, lambda: self.status_text.set(
+                "Writing index to disk..."
+            ))
+        else:
+            self.window.after(0, lambda: self.status_text.set(
+                f"Indexing... ({current} of {total} files.)"
+            ))
+        
+
+    def _do_search(self, query):
+        """
+        Runs the search and displays results: always on the main thread.
+        """
+        matches = search_index(query, INDEX_DIR)
+        self.display_results(matches)
+        self.status_text.set(f"Found {len(matches)} results for: {query}")
 
 
     def _set_ui_enabled(self, enabled):
@@ -349,7 +442,9 @@ class RummageApp:
 
 
     def _reset_path(self):
-        """Clears the selected path and resets related state."""
+        """
+        Clears the selected path and resets related state.
+        """
         self.folder_path.set("No folder selected...")
         self.last_folder   = None
         self.needs_reindex = False
