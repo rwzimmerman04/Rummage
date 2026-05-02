@@ -24,20 +24,102 @@ I have a large collection of tabletop game rulebooks. When I need to look someth
 - Fast parallel PDF extraction via pymupdf
 - Background threading means GUI stays responsive during indexing
 - Supports PDF (more formats on the way!)
-- Simple GUI — no need to enter commands in the CLI, great for non-technical users :)
+- Simple GUI - no need to enter commands in the CLI, great for non-technical users :)
 
 ---
 
 ## Installation
 
-...
+### Option 1 - Download the executable (recommended)
+
+No Python required. Just download and run.
+
+1. Go to the [Releases page](https://github.com/rwzimmerman04/Rummage/releases)
+2. Download `Rummage.exe` from the latest release
+3. Double-click `Rummage.exe` to launch - no installation needed
+
+**Note:** Windows may show a security warning since the exe is not signed. Click "More info" then "Run anyway" to proceed.
+
+---
+
+### Option 2 - Build from source
+
+Requires Python 3.13 or higher. Tested on Python 3.13.
+
+1. Clone the repository:
+```bash
+   git clone https://github.com/rwzimmerman04/Rummage.git
+   cd Rummage
+```
+
+2. Run the build script:
+```bash
+   build.bat
+```
+   This installs all dependencies and produces `Rummage.exe` in the `dist/` folder.
+
+3. Or run directly without building:
+```bash
+   pip install -r requirements.txt
+   python src/gui.py
+```
+
+---
+
+### CLI usage (for the more technically advanced users)
+
+```bash
+# Index a folder and search
+python src/main.py --dir "path/to/folder" --reindex --query "holy knight"
+
+# Search without reindexing
+python src/main.py --query "holy knight"
+
+# Index a single file
+python src/main.py --dir "path/to/file.pdf" --mode file --reindex
+```
 
 ---
 
 ## Usage
 
-- `holy knight`     — finds pages containing both words anywhere on the page
-- `"holy knight"`   — finds exact phrase only
+### Basic search
+
+Type a keyword or phrase into the search box and click **Search** or press **Enter**.
+
+On first use, Rummage will index your selected folder before searching. Indexing only happens once (unless you change the files to search) - subsequent searches are near-instant.
+
+### Search syntax
+
+| Query | Behavior |
+|-------|----------|
+| `holy knight` | Finds pages where both words appear anywhere on the page |
+| `"holy knight"` | Finds pages where the exact phrase appears - words must be adjacent |
+
+Rummage indexes all words including common ones like "the", "a", "is" - this is intentional so that game terms like "to hit" and "at will" can be searched exactly using quotes.
+
+### Search modes
+
+| Mode | Description |
+|------|-------------|
+| Recursive | Searches the selected folder and all subfolders |
+| Folder only | Searches only the top level of the selected folder |
+| Single file | Searches a single selected PDF file |
+
+### Results
+
+Results are displayed in two panels:
+
+- **Summary** - lists every matched book with the page numbers where matches were found, sorted by number of matches. Click any entry to jump directly to that book's context
+- **Context** - shows matched snippets grouped by book and page, with matched words highlighted in yellow
+
+### Saving results
+
+Go to **File -> Save Results** to save your results to a `.txt` file.
+
+### Reindexing
+
+Rummage detects when you select a new folder and rebuilds the index on your next search. To force a rebuild manually, go to **File -> Reindex**.
 
 ---
 
@@ -74,15 +156,15 @@ Well, as I said earlier in the motivation, Ctrl+F is completely fine, if you onl
 
 ### Wait! Won't we just have a bloated index with filler words?
 
-**Yes — and this is intentional.** Whoosh is perfectly capable of dropping filler words like "the", "a", "is" from the index, in fact it does this be default, it keeps the index slim and improves build time. However, Rummage deliberately keeps them, why?
+**Yes - and this is intentional.** Whoosh is perfectly capable of dropping filler words like "the", "a", "is" from the index, in fact it does this be default, it keeps the index slim and improves build time. However, Rummage deliberately keeps them, why?
 
-The reason comes down to a real world use case. Tabletop rulebooks and many other documents have lots of game terms that contain filler words — "to hit", "at will", "is prone", "a critical". If these filler words, or stop words as Whoosh calls them, were filtered, searching for `"to hit"` would silently become a search for just `"hit"`, returning every page that mentions hit anywhere in any context at all rather than the specific mechanic you were looking for.
+The reason comes down to a real world use case. Tabletop rulebooks and many other documents have lots of game terms that contain filler words - "to hit", "at will", "is prone", "a critical". If these filler words, or stop words as Whoosh calls them, were filtered, searching for `"to hit"` would silently become a search for just `"hit"`, returning every page that mentions hit anywhere in any context at all rather than the specific mechanic you were looking for.
 
 Instead, Rummage keeps all words in the index and lets you control precision through searching the syntax:
 
-- `holy knight` — finds pages where both words appear anywhere
-- `to hit`      — finds pages where "hit" appears
-- `"to hit"`    — finds the exact phrase, "to" and all
+- `holy knight` - finds pages where both words appear anywhere
+- `to hit`      - finds pages where "hit" appears
+- `"to hit"`    - finds the exact phrase, "to" and all
 
 ---
 
@@ -112,16 +194,16 @@ Rummage/
 - [X] CLI interface and argument parser
 - [X] Parallel extraction with pymupdf
 - [X] customtkinter GUI
-- [X] Background threading — UI stays responsive during indexing
+- [X] Background threading - UI stays responsive during indexing
 - [X] Live indexing progress in status bar
 - [X] Summary and context results panels
 - [X] Implement results save function
-- [ ] Windows executable via PyInstaller
+- [X] Windows executable via PyInstaller
 - [ ] DOCX support
 - [ ] TXT support
 - [ ] EPUB support
-- [ ] Incremental indexing — only re-index changed files
-- [ ] Stemming toggle for root word matching e.g. "knights" → "knight"
+- [ ] Incremental indexing - only re-index changed files
+- [ ] Stemming toggle for root word matching e.g. "knights" -> "knight"
 - [ ] Open PDF to exact page from results (maybe)
 - [ ] Remember last used folder between sessions
 
