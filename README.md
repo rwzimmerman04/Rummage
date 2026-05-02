@@ -115,7 +115,7 @@ Rummage/
 - [X] Background threading — UI stays responsive during indexing
 - [X] Live indexing progress in status bar
 - [X] Summary and context results panels
-- [ ] Implement results save function
+- [X] Implement results save function
 - [ ] Windows executable via PyInstaller
 - [ ] DOCX support
 - [ ] TXT support

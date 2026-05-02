@@ -7,7 +7,7 @@ import pathlib
 import fitz
 from whoosh.fields import Schema, ID, TEXT, NUMERIC
 from whoosh.analysis import RegexTokenizer, LowercaseFilter
-from multiprocessing import Pool, cpu_count, freeze_support
+from multiprocessing import Pool, cpu_count
 import whoosh.index
 
 # Create analyzer: No stop filter (keep stopwords)
@@ -59,7 +59,6 @@ def index_documents(path, index_dir, mode="recursive", progress_callback=None):
     Retrieves files based on the selected mode, extracts text, 
     and writes each page as document into the Whoosh index
     """
-    freeze_support()
 
     # Validate the mode, ensure the file is valid
     if mode == "file" and not pathlib.Path(path).is_file():

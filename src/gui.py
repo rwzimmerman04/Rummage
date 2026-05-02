@@ -11,6 +11,7 @@ import threading
 import webbrowser
 import whoosh.index
 import pathlib
+from multiprocessing import freeze_support
 
 from indexer import index_documents
 from searcher import search_index
@@ -615,7 +616,41 @@ class RummageApp:
 
 
     def save_results(self):
-        pass    # TO-DO: Save results to file
+        """
+        Saves the current search results to a formatted text file.
+        Groups results by book with page numbers and snippets.
+        """
+        # Check if there is anything to save
+        content = self.results_text.get("1.0", "end").strip()
+        if not content or content == "No matches found.":
+            messagebox.showinfo("Nothing to save", "No results to save.")
+            return
+
+        # Ask user where to save the file
+        filepath = filedialog.asksaveasfilename(
+            defaultextension=".txt",
+            filetypes=[("Text files", "*.txt"), ("All files", "*.*")],
+            initialfile="rummage_results.txt"
+        )
+        if not filepath:
+            return
+
+        try:
+            with open(filepath, "w", encoding="utf-8") as f:
+                # Write header
+                f.write(f"Rummage Search Results\n")
+                f.write(f"Query: {self.query_entry.get().strip()}\n")
+                f.write(f"Folder: {self.folder_path.get()}\n")
+                f.write(f"Date: {__import__('datetime').date.today()}\n")
+                f.write("\n")
+
+                # Write the raw text content — strip it cleanly
+                f.write(content)
+
+            self.status_text.set(f"Results saved to {filepath}")
+
+        except Exception as e:
+            messagebox.showerror("Save failed", f"Could not save results:\n{e}")
 
 
     def on_close(self):
@@ -640,4 +675,5 @@ def main():
 
 
 if __name__ == "__main__":
+    freeze_support()
     main()

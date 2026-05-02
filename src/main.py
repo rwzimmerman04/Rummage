@@ -10,6 +10,7 @@ import whoosh.index
 
 from indexer import index_documents
 from searcher import search_index
+from multiprocessing import freeze_support
 
 # Define constants
 BASE_DIR = pathlib.Path(__file__).parent.parent
@@ -67,11 +68,12 @@ def main():
         if not whoosh.index.exists_in(INDEX_DIR):
             print("Error: No index found. Run with --reindex first.")
             return
-        matches = search_index(args.query, INDEX_DIR, args.limit)
+        matches = search_index(args.query, INDEX_DIR)
         print_results(matches)
     else:
         print("No query provided! Use -q option to search.")
 
 
 if __name__ == "__main__":
+    freeze_support()
     main()
