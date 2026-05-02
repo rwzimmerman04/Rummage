@@ -170,6 +170,7 @@ class RummageApp:
 
         # Create the search button
         self.search_button = ctk.CTkButton(path_frame, text="Search", width=80, command=self.run_search)
+        self.query_entry.bind("<Return>", lambda e: self.run_search())
         self.search_button.pack(side="left")
 
         # Create the hint label below the search bar
